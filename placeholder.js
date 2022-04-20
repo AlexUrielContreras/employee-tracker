@@ -100,6 +100,51 @@ module.exports = class Tracker {
         })
         })
     }
+    addEmployee(){
+        con.connect((err) => {
+            if (err) throw err;
+            con.query('SELECT role.title, role.id, employee.first_name, employee.id FROM role LEFT JOIN employee ON role.id = employee.id',function(err, results, fields){
+                if (err) throw err;
+                console.log(results)
+                let title = [];
+                results.forEach(name => title.push(name.title))
+                console.log(title)
+                inquirer.prompt([
+                    {
+                        name: 'employName',
+                        message: "What is the employee's first name? "
+                    },
+                    {
+                        name: 'employLastName',
+                        message: "What is the employee's last name? "
+                    },
+                    {
+                        type: 'list',
+                        name: 'employRole',
+                        message: "What is the employee's role? ",
+                        choices: title
+                    },
+                    {
+                        type: 'list',
+                        name: 'manager',
+                        message: "Whos is the employee's manager?",
+                        choices: []
+                    }
+                ]).then(( answer )=>{
+                    console.log(answer)
+                    let roleId;
+                    console.log(results)
+                    results.forEach((title) => {
+                        if (answer.employRole === title.title){
+                            roleId = title.id
+                            console.log(roleId)
+                        }
+                    })
+                    
+                })
+            })
+        })
+    }
 
 }       
     
