@@ -1,8 +1,6 @@
 const inquirer = require('inquirer');
 const db = require('./db/connections');
 const Tracker = require('./placeholder');
-const cTable = require('console.table');
-
 
 function startingTable() {
     const sql = ' SELECT employee.id,employee.first_name, employee.last_name, role.title,role.salary FROM employee LEFT JOIN role ON role_id = role.id;   '
@@ -14,7 +12,7 @@ function startingTable() {
 }
 
 const questions = () => {   
-    inquirer
+     inquirer
         .prompt([
             {
                 name: 'opening',
@@ -24,6 +22,7 @@ const questions = () => {
             }
         ]).then(({ opening }) => {
             const response = new Tracker(opening);
+            console.log(opening);
         switch (response.option) {
             case 'View all Departments':
                 response.getAllDept();
@@ -56,4 +55,3 @@ const questions = () => {
 
 startingTable()
 
-module.exports = { startingTable }

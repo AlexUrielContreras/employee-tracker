@@ -18,7 +18,7 @@ module.exports = class Tracker {
     }
 
     getAllRoles() {
-        const sql = 'Select id,title,salary FROM role'
+        const sql = 'Select role.*, department.name AS dept_name FROM role LEFT JOIN department ON role.department_id = department.id'
         con.promise().query(sql)
             .then(([rows, fields]) => {
                 console.table(rows);
@@ -42,7 +42,7 @@ module.exports = class Tracker {
             {
                 name: 'addDept',
                 type: 'input',
-                message: 'Name of Department: '
+                message: 'Name of Department:'
             }
         ]).then(({ addDept }) => {
             const sql = "INSERT INTO department (name) VALUES (?)"
@@ -57,72 +57,55 @@ module.exports = class Tracker {
     }
 
     addRole() {
-        inquirer.prompt([
-            {
-                name: 'roleName',
-                type: 'input',
-                message: 'What is the name of the role?'
-            },
-            {
-                name: 'salary',
-                type: 'input',
-                message: 'What is the salary of the role'
-            },
-            {
-                name: 'isTo',
-                type: 'input',
-                message: 'Which department does the role belong to'
-            }
-        ]).then(({ roleName, salary, isTo }) => {
-            const sql = 'INSERT INTO role (title, salary, department_id) VALUES (?,?,?)'
-            const param = [roleName, salary, isTo];
-            con.promise().query(sql, param)
-                .then(([rows, fields]) => {
-                    console.log(`${roleName} has been added to the database`);
-                })
-                .catch(console.log)
-                .then(() => con.end());
-
-        })
-    }
-
-    addEmployee() {
-        inquirer
-            .prompt([
+        con.connect((err) => {
+            if (err) throw err
+            con.query(`SELECT id , name FROM department`,function(err, results, fields){
+                if (err) throw err;
+                const depName = []
+                results.forEach(((name) => depName.push(name.name)))
+                console.log(depName)
+            
+            inquirer.prompt([
                 {
-                    type: 'input',
-                    name: 'firstName',
-                    message: "What is the employee's first name? ",
+                    name: 'roleName',
+                    message: 'What is the name of the role? '  
                 },
                 {
-                    type: 'input',
-                    name: 'lastName',
-                    message: "What is the employee's last name? "
+                    name: 'salary',
+                    message: "What is the salary of the role? "
                 },
                 {
-                    type: 'input',
-                    name: 'role',
-                    message: "What is the employee's role? ",
-                },
-                {
-                    type: 'input',
-                    name: 'manager',
-                    message: "Who is the employee's manager? ",
+                    type: 'list',
+                    name: 'belong',
+                    message: 'Which department does the role belong to',
+                    choices: depName
                 }
-            ]).then(({ firstName, lastName, role, manager }) => {
-                const sql = 'INSERT INTO employee (first_name,last_name,role_id, manager_id) VALUES (?,?,?,?)'
-                const params = [firstName, lastName, role, manager]
-                con.promise().query(sql, params)
+            ]).then((answer) =>{
+                let titleId;
+                results.forEach((role)=> {
+                    if (answer.belong === role.name) {
+                        titleId = role.id
+                        console.log(titleId)
+                    }
+                })
+                const sql = 'INSERT INTO role (title,salary,department_id) VALUES (?,?,?)'
+                
+                con.promise().query(sql, [answer.roleName, answer.salary, titleId])
                 .then(([rows, fields]) => {
-                    console.log(`${firstName} has been added to the database`);
+                    console.log(`${answer.roleName} has been added to the database`)
                 })
                 .catch(console.log)
                 .then(() => con.end());
             })
-
+        })
+        })
     }
 
-    updateEmployee() {  
+}       
+    
+
+/* 
+updateEmployee() {  
         con.connect(function(err) {
             if (err) throw err;
             con.query('SELECT employee.id,employee.first_name,employee.last_name, role.id as "role_id" FROM employee, role, department WHERE department.id = role.department_id and role.id = employee.role_id', function(err, results ,fields) {
@@ -180,4 +163,4 @@ module.exports = class Tracker {
         }
         )}
     )}
-}
+*/
