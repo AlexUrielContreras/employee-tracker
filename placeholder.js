@@ -1,33 +1,42 @@
 const cTable = require('console.table');
-const db = require('./db/connections');
+const con = require('./db/connections');
 const inquirer = require('inquirer');
+
 
 module.exports = class Tracker {
     constructor(option) {
         this.option = option
     }
-
     getAllDept() {
         const sql = 'SELECT * FROM department'
-        db.query(sql, (err, row) => {
-            if (err) throw err;
-            console.table(row)
-        })
+        con.promise().query(sql)
+            .then(([rows, fields]) => {
+                console.table(rows);
+            })
+            .catch(console.log)
+            .then(() => con.end());
     }
+
     getAllRoles() {
-        const sql = 'Select * FROM role'
-        db.query(sql, (err, row) => {
-            if (err) throw err
-            console.table(row)
-        })
+        const sql = 'Select id,title,salary FROM role'
+        con.promise().query(sql)
+            .then(([rows, fields]) => {
+                console.table(rows);
+            })
+            .catch(console.log)
+            .then(() => con.end());
     }
+
     getAllEmployees() {
-        const sql = 'SELECT * FROM employee';
-        db.query(sql, (err, row) => {
-            if (err) throw err;
-            console.table(row)
-        })
+        const sql = 'SELECT id,first_name,last_name FROM employee';
+        con.promise().query(sql)
+            .then(([rows, fields]) => {
+                console.table(rows);
+            })
+            .catch(console.log)
+            .then(() => con.end());
     }
+
     addDept() {
         inquirer.prompt([
             {
@@ -38,11 +47,137 @@ module.exports = class Tracker {
         ]).then(({ addDept }) => {
             const sql = "INSERT INTO department (name) VALUES (?)"
             const param = addDept;
-            db.query(sql, param, (err, result) => {
-                if (err) throw err;
-                console.log(`Added ${addDept} to the Database`);
-            })
+            con.promise().query(sql, param)
+                .then(([rows, fields]) => {
+                    console.log(`${addDept} has been added to the database`);
+                })
+                .catch(console.log)
+                .then(() => con.end());
         })
     }
-}
 
+    addRole() {
+        inquirer.prompt([
+            {
+                name: 'roleName',
+                type: 'input',
+                message: 'What is the name of the role?'
+            },
+            {
+                name: 'salary',
+                type: 'input',
+                message: 'What is the salary of the role'
+            },
+            {
+                name: 'isTo',
+                type: 'input',
+                message: 'Which department does the role belong to'
+            }
+        ]).then(({ roleName, salary, isTo }) => {
+            const sql = 'INSERT INTO role (title, salary, department_id) VALUES (?,?,?)'
+            const param = [roleName, salary, isTo];
+            con.promise().query(sql, param)
+                .then(([rows, fields]) => {
+                    console.log(`${roleName} has been added to the database`);
+                })
+                .catch(console.log)
+                .then(() => con.end());
+
+        })
+    }
+
+    addEmployee() {
+        inquirer
+            .prompt([
+                {
+                    type: 'input',
+                    name: 'firstName',
+                    message: "What is the employee's first name? ",
+                },
+                {
+                    type: 'input',
+                    name: 'lastName',
+                    message: "What is the employee's last name? "
+                },
+                {
+                    type: 'input',
+                    name: 'role',
+                    message: "What is the employee's role? ",
+                },
+                {
+                    type: 'input',
+                    name: 'manager',
+                    message: "Who is the employee's manager? ",
+                }
+            ]).then(({ firstName, lastName, role, manager }) => {
+                const sql = 'INSERT INTO employee (first_name,last_name,role_id, manager_id) VALUES (?,?,?,?)'
+                const params = [firstName, lastName, role, manager]
+                con.promise().query(sql, params)
+                .then(([rows, fields]) => {
+                    console.log(`${firstName} has been added to the database`);
+                })
+                .catch(console.log)
+                .then(() => con.end());
+            })
+
+    }
+
+    updateEmployee() {  
+        con.connect(function(err) {
+            if (err) throw err;
+            con.query('SELECT employee.id,employee.first_name,employee.last_name, role.id as "role_id" FROM employee, role, department WHERE department.id = role.department_id and role.id = employee.role_id', function(err, results ,fields) {
+                if (err) throw err 
+                const nameArr = []
+                results.forEach(name => nameArr.push(`${name.first_name} ${name.last_name}`));
+                console.log(nameArr) 
+                con.connect(function(err) {
+                    if (err) throw err
+                con.query('SELECT role.id , role.title FROM role', function(err,results,fields) {
+                    if (err) throw err
+                   const roleTitle = [];
+                   results.forEach(title => roleTitle.push(title.title))
+                   console.log(roleTitle)
+            inquirer
+            .prompt([
+                {
+                    type: 'list',
+                    name: 'update',
+                    message: 'Which employee role would you like to update? ',
+                    choices: nameArr
+                },
+                {
+                    type: 'list',
+                    name: 'newRole',
+                    message: 'Choose new role',
+                    choices: roleTitle
+                }
+            ]).then(( answer ) => {
+               let newTitleId, employeeId;
+                results.forEach((role)=> {
+                    if (answer.newRole === role.title) {
+                        newTitleId = role.id;
+                    }
+                });
+                results.forEach((employee)=> {
+                    if (answer.update === `${employee.first_name} ${employee.last_name}`) {
+                        employeeId = employee.id
+                        console.log(employeeId)
+                    }
+                });
+                const sql = `UPDATE employee SET employee.role_id = ? WHERE employee.id = ?`;
+                const params = [newTitleId, employeeId]
+                con.promise().query(sql, params)
+                .then(([rows, fields]) => {
+                    console.log(`${answer.update} has been updated to ${answer.newRole}`)
+                    console.table(fields)
+                })
+                .catch(console.log)
+                .then(() => con.end());
+                
+            })
+        })
+    }   )
+        }
+        )}
+    )}
+}

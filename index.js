@@ -1,45 +1,52 @@
 const inquirer = require('inquirer');
-const Tracker = require('./placeholder')
+const db = require('./db/connections');
+const Tracker = require('./placeholder');
+const cTable = require('console.table');
 
 
-const questions = () => {
-    
-    return inquirer
+function startingTable() {
+    const sql = ' SELECT employee.id,employee.first_name, employee.last_name, role.title,role.salary FROM employee LEFT JOIN role ON role_id = role.id;   '
+    db.query(sql,(err, row) => {
+        if (err) throw err;
+        console.table(row)
+        questions()
+    })
+}
+
+const questions = () => {   
+    inquirer
         .prompt([
             {
-            name: 'opening',
-            type: 'list',
-            message: 'What would you like to do?',
-            choices: ['View all departments','View all roles', 'View all employees', 'Add Department', 'Add a role', 'Add an Employee', 'Update an Employee role']
-        }
+                name: 'opening',
+                type: 'list',
+                message: 'What would you like to do?',
+                choices: ['View all Departments', 'View all Roles', 'View all Employees', 'Add Department', 'Add Role', 'Add Employee', 'Update an Employee role']
+            }
         ]).then(({ opening }) => {
-            const response = new Tracker(opening)
-            switch (response.option) {
-                case 'View all departments':
-                    response.getAllDept();
-                    break;
-                case 'View all roles':
-                    response.getAllRoles();
-                    break;
-                case 'View all employees':
-                    response.getAllEmployees();
-                    break;
-                case 'Add Department':
-                    response.addDept();
-                    break;
-                case 'Add role':
-                    response.addDept();
-                    break;
-                case 'Add Employee':
-                    response.addDept();
-                    break;
-                case 'Updata an Employee':
-                    response.addDept();
-                    break;
-                default:
-                    console.log('Pick Again')
-                    questions();
-            } 
+            const response = new Tracker(opening);
+        switch (response.option) {
+            case 'View all Departments':
+                response.getAllDept();
+                break;
+            case 'View all Roles':
+                response.getAllRoles();
+                break;
+            case 'View all Employees':
+                response.getAllEmployees();
+                break;
+            case 'Add Department':
+                response.addDept();
+                break;
+            case 'Add Role':
+                response.addRole();
+                break;
+            case 'Add Employee':
+                response.addEmployee();
+                break;
+            default:
+                response.updateEmployee();
+                break;  
+        }
         })
 }
 
@@ -47,5 +54,6 @@ const questions = () => {
 
 
 
+startingTable()
 
-questions();
+module.exports = { startingTable }
