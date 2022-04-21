@@ -2,7 +2,6 @@ const cTable = require('console.table');
 const con = require('./db/connections');
 const inquirer = require('inquirer');
 
-
 module.exports = class Tracker {
     constructor(option) {
         this.option = option
@@ -16,7 +15,6 @@ module.exports = class Tracker {
             .catch(console.log)
             .then(() => con.end());
     }
-
     getAllRoles() {
         const sql = 'Select role.*, department.name AS dept_name FROM role LEFT JOIN department ON role.department_id = department.id'
         con.promise().query(sql)
@@ -26,7 +24,6 @@ module.exports = class Tracker {
             .catch(console.log)
             .then(() => con.end());
     }
-
     getAllEmployees() {
         const sql = 'SELECT id,first_name,last_name FROM employee';
         con.promise().query(sql)
@@ -36,7 +33,6 @@ module.exports = class Tracker {
             .catch(console.log)
             .then(() => con.end());
     }
-
     addDept() {
         inquirer.prompt([
             {
@@ -55,16 +51,13 @@ module.exports = class Tracker {
                 .then(() => con.end());
         })
     }
-
     addRole() {
         con.connect((err) => {
             if (err) throw err
             con.query(`SELECT id , name FROM department`,function(err, results, fields){
                 if (err) throw err;
                 const depName = []
-                results.forEach(((name) => depName.push(name.name)))
-                console.log(depName)
-            
+                results.forEach(((name) => depName.push(name.name)))        
             inquirer.prompt([
                 {
                     name: 'roleName',
@@ -85,7 +78,6 @@ module.exports = class Tracker {
                 results.forEach((role)=> {
                     if (answer.belong === role.name) {
                         titleId = role.id
-                        console.log(titleId)
                     }
                 })
                 const sql = 'INSERT INTO role (title,salary,department_id) VALUES (?,?,?)'
@@ -105,17 +97,19 @@ module.exports = class Tracker {
             if (err) throw err;
             con.query('SELECT role.title, role.id, employee.first_name, employee.id FROM role LEFT JOIN employee ON role.id = employee.id',function(err, results, fields){
                 if (err) throw err;
-                console.log(results)
                 let title = [];
-                results.forEach(name => title.push(name.title))
-                console.log(title)
+                results.forEach(name => title.push(name.title));
+                con.query('SELECT first_name, id FROM employee',function(err, result, fields){
+                    if (err) throw err
+                    let employArr = []
+                    result.forEach((employName) => employArr.push(employName.first_name))
                 inquirer.prompt([
                     {
                         name: 'employName',
                         message: "What is the employee's first name? "
                     },
                     {
-                        name: 'employLastName',
+                        name: 'employLast',
                         message: "What is the employee's last name? "
                     },
                     {
@@ -128,24 +122,33 @@ module.exports = class Tracker {
                         type: 'list',
                         name: 'manager',
                         message: "Whos is the employee's manager?",
-                        choices: []
+                        choices: employArr
                     }
                 ]).then(( answer )=>{
-                    console.log(answer)
-                    let roleId;
-                    console.log(results)
+                    let roleId, employId;
                     results.forEach((title) => {
                         if (answer.employRole === title.title){
-                            roleId = title.id
-                            console.log(roleId)
+                            roleId = title.id                          
                         }
                     })
-                    
+                    result.forEach((names => {
+                        if (answer.manager === names.first_name){
+                            employId = names.id 
+                        }
+                    }))
+                    const sql = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)';
+                    const params = [answer.employName, answer.employLast, roleId, employId]
+                    con.promise().query(sql,params )
+                    .then(([rows, fields]) => {
+                        console.log(`${answer.employName} ${answer.employLast} has been added to the database`)
+                    })
+                    .catch(console.log)
+                    .then(() => con.end());
                 })
             })
         })
+        })
     }
-
 }       
     
 
