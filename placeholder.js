@@ -149,66 +149,60 @@ module.exports = class Tracker {
         })
         })
     }
+    updateEmployee() {
+        con.connect((err) => {
+            if (err) throw err;
+            con.query('SELECT first_name,id from employee',function(err, results, fields){
+                let nameArr = []
+                console.log(results)
+                results.forEach((name2) => nameArr.push(name2.first_name))
+                console.log(nameArr);
+                con.query('SELECT title,id FROM role',function(err,result, fields){
+                    let roleArr = [];
+                    result.forEach(role => roleArr.push(role.title));
+                    console.log(roleArr)
+                    inquirer.prompt([
+                        {
+                            type: 'list',
+                            name: 'name',
+                            message: "Which employee's name would you like to update? ",
+                            choices: nameArr
+                        },
+                        {
+                            type: 'list',
+                            name: 'roleList',
+                            message: "What is the employee's new role?",
+                            choices: roleArr
+                        }
+                    ]).then(({name , roleList}) => {
+                        console.log(name, roleList)
+                        let nameId, roleId;
+                        results.forEach(empName => {
+                           if (name === empName.first_name){
+                             nameId = empName.id
+                             console.log(nameId)
+                           }
+                        })
+                        result.forEach(roleName => {
+                            if(roleList === roleName.title){
+                                roleId = roleName.id
+                                console.log(roleId)
+                            }
+                        })
+                        const sql = 'UPDATE employee SET role_id = ? WHERE employee.id = ?';
+                        const params = [roleId, nameId]
+                        con.promise().query(sql,params)
+                        .then(([rows, fields]) => {
+                            console.log(`${name} role has been updated`)
+                        })
+                        .catch(console.log)
+                        .then(() => con.end());
+                    })
+                })
+            })
+        })
+    }
 }       
     
 
-/* 
-updateEmployee() {  
-        con.connect(function(err) {
-            if (err) throw err;
-            con.query('SELECT employee.id,employee.first_name,employee.last_name, role.id as "role_id" FROM employee, role, department WHERE department.id = role.department_id and role.id = employee.role_id', function(err, results ,fields) {
-                if (err) throw err 
-                const nameArr = []
-                results.forEach(name => nameArr.push(`${name.first_name} ${name.last_name}`));
-                console.log(nameArr) 
-                con.connect(function(err) {
-                    if (err) throw err
-                con.query('SELECT role.id , role.title FROM role', function(err,results,fields) {
-                    if (err) throw err
-                   const roleTitle = [];
-                   results.forEach(title => roleTitle.push(title.title))
-                   console.log(roleTitle)
-            inquirer
-            .prompt([
-                {
-                    type: 'list',
-                    name: 'update',
-                    message: 'Which employee role would you like to update? ',
-                    choices: nameArr
-                },
-                {
-                    type: 'list',
-                    name: 'newRole',
-                    message: 'Choose new role',
-                    choices: roleTitle
-                }
-            ]).then(( answer ) => {
-               let newTitleId, employeeId;
-                results.forEach((role)=> {
-                    if (answer.newRole === role.title) {
-                        newTitleId = role.id;
-                    }
-                });
-                results.forEach((employee)=> {
-                    if (answer.update === `${employee.first_name} ${employee.last_name}`) {
-                        employeeId = employee.id
-                        console.log(employeeId)
-                    }
-                });
-                const sql = `UPDATE employee SET employee.role_id = ? WHERE employee.id = ?`;
-                const params = [newTitleId, employeeId]
-                con.promise().query(sql, params)
-                .then(([rows, fields]) => {
-                    console.log(`${answer.update} has been updated to ${answer.newRole}`)
-                    console.table(fields)
-                })
-                .catch(console.log)
-                .then(() => con.end());
-                
-            })
-        })
-    }   )
-        }
-        )}
-    )}
-*/
+
