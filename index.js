@@ -1,6 +1,6 @@
 const inquirer = require('inquirer');
 const db = require('./db/connections');
-const Tracker = require('./placeholder');
+const Tracker = require('./queries');
 
 function startingTable() {
     const sql = ' SELECT employee.id,employee.first_name, employee.last_name, employee.manager_id, role.title,role.salary FROM employee LEFT JOIN role ON role_id = role.id;   '
@@ -53,5 +53,4 @@ const questions = () => {
 
 
 
-startingTable()
-
+startingTable();

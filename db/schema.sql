@@ -1,7 +1,3 @@
-DROP TABLE employee;
-DROP TABLE role;
-DROP TABLE department;
-
 
 CREATE TABLE department (
     id INTEGER AUTO_INCREMENT PRIMARY KEY,

@@ -1,6 +1,7 @@
 const cTable = require('console.table');
 const con = require('./db/connections');
 const inquirer = require('inquirer');
+const  questions  = require('./index')
 
 module.exports = class Tracker {
     constructor(option) {
@@ -16,7 +17,7 @@ module.exports = class Tracker {
             .then(() => con.end());
     }
     getAllRoles() {
-        const sql = 'Select role.*, department.name AS dept_name FROM role LEFT JOIN department ON role.department_id = department.id'
+        const sql = 'SELECT role.id,role.title,role.salary, department.name AS dept_name FROM role LEFT JOIN department ON role.department_id = department.id'
         con.promise().query(sql)
             .then(([rows, fields]) => {
                 console.table(rows);
@@ -154,13 +155,11 @@ module.exports = class Tracker {
             if (err) throw err;
             con.query('SELECT first_name,id from employee',function(err, results, fields){
                 let nameArr = []
-                console.log(results)
                 results.forEach((name2) => nameArr.push(name2.first_name))
-                console.log(nameArr);
                 con.query('SELECT title,id FROM role',function(err,result, fields){
                     let roleArr = [];
                     result.forEach(role => roleArr.push(role.title));
-                    console.log(roleArr)
+
                     inquirer.prompt([
                         {
                             type: 'list',
@@ -175,18 +174,15 @@ module.exports = class Tracker {
                             choices: roleArr
                         }
                     ]).then(({name , roleList}) => {
-                        console.log(name, roleList)
                         let nameId, roleId;
                         results.forEach(empName => {
                            if (name === empName.first_name){
                              nameId = empName.id
-                             console.log(nameId)
                            }
                         })
                         result.forEach(roleName => {
                             if(roleList === roleName.title){
                                 roleId = roleName.id
-                                console.log(roleId)
                             }
                         })
                         const sql = 'UPDATE employee SET role_id = ? WHERE employee.id = ?';
